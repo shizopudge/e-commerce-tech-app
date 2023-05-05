@@ -1,0 +1,4 @@
+/server/serviceAccount.json
+/server/.env
+/server/node_modules/
+/server/static/
