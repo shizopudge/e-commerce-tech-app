@@ -114,8 +114,8 @@ class ProductsController {
     async update(req, res) {
         try {
             const id = req.params.id;
-            const updatedProduct = req.body;
-            await productsRepository.update(updatedProduct, id).then(response => {
+            const updatedFields = req.body;
+            await productsRepository.update(updatedFields, id).then(response => {
                 if(response) {
                     if(response.status === 200) {
                         console.log('Product successfully updated');
@@ -222,7 +222,7 @@ class ProductsController {
             await productsRepository.uploadImages(id, files).then(response => {
                 if(response) {
                     if(response.status === 200) {
-                        console.log('Image successfully uploaded');
+                        console.log('Images successfully uploaded');
                         res.status(200).send(response);
                     } else {
                         console.log(response.message);
@@ -241,7 +241,59 @@ class ProductsController {
         }
     }
 
-    async searchProduct(req, res) {
+    async addToCart(req, res) {
+        try {
+            const productId = req.params.productId;
+            const uid = req.params.uid;
+            await productsRepository.addToCart(productId, uid).then(response => {
+                if(response) {
+                    if(response.status === 200) {
+                        console.log('Successfully added to cart');
+                        res.status(200).send(response);
+                    } else {
+                        console.log(response.message);
+                        res.status(response.status).send(response);
+                    }
+                } else {
+                    const exception = apiExceptionResponses.internalServerError()
+                    console.log(exception);
+                    res.send(exception);
+                }
+            });
+        } catch (error) {
+            const exception = apiExceptionResponses.internalServerError(error.toString())
+            console.log(exception);
+            res.send(exception);
+        }
+    }
+
+    async addToWishlist(req, res) {
+        try {
+            const productId = req.params.productId;
+            const uid = req.params.uid;
+            await productsRepository.addToWishlist(productId, uid).then(response => {
+                if(response) {
+                    if(response.status === 200) {
+                        console.log('Successfully added to wishlist');
+                        res.status(200).send(response);
+                    } else {
+                        console.log(response.message);
+                        res.status(response.status).send(response);
+                    }
+                } else {
+                    const exception = apiExceptionResponses.internalServerError()
+                    console.log(exception);
+                    res.send(exception);
+                }
+            });
+        } catch (error) {
+            const exception = apiExceptionResponses.internalServerError(error.toString())
+            console.log(exception);
+            res.send(exception);
+        }
+    }
+
+    async searchAndFilterAndSortProduct(req, res) {
         try {
             const query = req.query.query;
             const lastTitle = req.query.lastTitle;
@@ -255,7 +307,8 @@ class ProductsController {
             const maxPrice = req.query.maxPrice;
             const productType = req.query.productType;
             const orderBy = req.query.orderBy;
-            await productsRepository.searchProduct(query, lastTitle, isLatest, isBestseller, minRating, discount, inStock, minReliability, minPrice, maxPrice, productType, orderBy).then(response => {
+            const productIds = req.body.productIds;
+            await productsRepository.searchAndFilterAndSortProduct(query, lastTitle, isLatest, isBestseller, minRating, discount, inStock, minReliability, minPrice, maxPrice, productType, orderBy, productIds).then(response => {
                 if(response) {
                     if(response.status === 200) {
                         console.log('Products successfully searched');

@@ -1,18 +1,53 @@
 const {admin} = require('../../firebase_config.js');
+const apiSuccessfulResponses = require('../../apiResponses/apiSuccessfulResponses.js');
+const apiExceptionResponses = require('../../apiResponses/apiExceptionResponses.js');
 
 class AuthRepository {
-    async signUp(req, res)  {
-        const userResponse = await admin.auth().createUser({
-            email: req.body.email, 
-            password: req.body.password,
-        });
-        res.send(userResponse);
+
+    async signUp(email, password)  {
+        if(email && password) {
+            const user = await admin.auth().createUser({
+                email: email, 
+                password: password,
+                emailVerified: false,
+            });
+            if(user) {
+                admin.auth().setCustomUserClaims(user.uid, {admin: false});
+                return user;
+            } else {
+                return apiExceptionResponses.internalServerError();
+            }
+        } else {
+            if (!email) {
+                return apiExceptionResponses.badRequest('We could not get users email');
+            }
+            if (!password) {
+                return apiExceptionResponses.badRequest('We could not get users password');
+            }
+        }
     }
 
-    async generateToken(req, res) {
-        const uid = req.body.uid;
-        const authtoken = await admin.auth().createCustomToken(uid);
-        res.send(authtoken);
+    async signUpAsAdmin(email, password) {
+        if(email && password) {
+            const user = await admin.auth().createUser({
+                email: email, 
+                password: password,
+                emailVerified: true,
+            });
+            if(user) {
+                admin.auth().setCustomUserClaims(user.uid, {admin: true});
+                return user;
+            } else {
+                return apiExceptionResponses.internalServerError();
+            }
+        } else {
+            if (!email) {
+                return apiExceptionResponses.badRequest('We could not get users email');
+            }
+            if (!password) {
+                return apiExceptionResponses.badRequest('We could not get users password');
+            }
+        }
     }
 }
 

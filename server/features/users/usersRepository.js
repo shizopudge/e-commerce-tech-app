@@ -6,17 +6,16 @@ const filesService = require('../../service/filesService.js');
 const createUserDto = require('./dto/createUserDto.js');
 
 class UsersRepository {
-    async create(username, email, files) {
-        const id = uuid.v4();
-        if(username && email) {
+    async create(username, email, files, id, isAdmin) {
+        if(username && email && id && isAdmin !== undefined && isAdmin !== null) {
             if(files) {
                 const filename = id + '.jpg';
-                const user = createUserDto(id, username, email, filename);
+                const user = createUserDto(id, username, email, filename, isAdmin);
                 filesService.uploadUserImage(files.img, filename);
                 const response = await db.collection('users').doc(id).create(user);
                 return apiSuccessfulResponses.successfullResponse(response);
             } else {
-                const user = createUserDto(id, username, email);
+                const user = createUserDto(id, username, email, null, isAdmin);
                 const response = await db.collection('users').doc(id).create(user);
                 return apiSuccessfulResponses.successfullResponse(response);
             } 
@@ -26,6 +25,12 @@ class UsersRepository {
             }
             if (!email) {
                 return apiExceptionResponses.badRequest('We could not get users email');
+            }
+            if (!id) {
+                return apiExceptionResponses.badRequest('We could not get users id');
+            }
+            if (isAdmin === undefined || isAdmin === null) {
+                return apiExceptionResponses.badRequest('We could not get users role');
             }
         }
     }
@@ -125,13 +130,13 @@ class UsersRepository {
         }
     }
 
-    async update(updatedUser, id) {
+    async update(updatedFields, id) {
         if(id) {
-            if(updatedUser) {
+            if(updatedFields) {
                 const ref = db.collection('users').doc(id);
                 const user = (await ref.get()).data();
                 if(user) {
-                    const response = await ref.update(updatedUser);
+                    const response = await ref.update(updatedFields);
                     return apiSuccessfulResponses.successfullResponse(response);
                 } else {
                     return apiExceptionResponses.notFound();
@@ -144,33 +149,81 @@ class UsersRepository {
         }
     }
 
-    //mb add search by email
-    async searchUser(query, lastUsername) {
+    async searchAndFilterAndSortUser(query, lastUsername, level, isAdmin, isAccountVerified, orderBy) {
         const users = [];
-        const countRef = db.collection('users').
-        where('username', '>=', query ? query : 0).
-        where('username', '<', query ? query.substring(0, query.length - 1) + String.fromCharCode(query.charCodeAt(query.length - 1) + 1) : 0).orderBy('username').count();
-        const totalCount = (await countRef.get()).data().count;
-        const pageCount = Math.ceil(totalCount / 10);
-        if(lastUsername) {
-            const ref = db.collection('users').
-            where('username', '>=', query ? query : 0).
-            where('username', '<', query ? query.substring(0, query.length - 1) + String.fromCharCode(query.charCodeAt(query.length - 1) + 1) : 0).limit(10).orderBy('username').startAfter(lastUsername);
-            const response = await ref.get();
-            response.docs.forEach((doc) => {
-                users.push(doc.data());
-            });
-            return apiSuccessfulResponses.successfullResponse(null, {pageCount, totalCount, count: users.length, users});
+        let indexOfLastReturnedUser = null;
+        let ref = null;
+        let matchingToSearchUsers = null;
+        if(orderBy) {
+            ref = db.collection('users').orderBy('username', orderBy);
         } else {
-            const ref = db.collection('users').
-            where('username', '>=', query ? query : 0).
-            where('username', '<', query ? query.substring(0, query.length - 1) + String.fromCharCode(query.charCodeAt(query.length - 1) + 1) : 0).limit(10).orderBy('username');
+            ref = db.collection('users').orderBy('username', 'desc');
+        }
+        if(ref) {
             const response = await ref.get();
             response.docs.forEach((doc) => {
                 users.push(doc.data());
             });
-            return apiSuccessfulResponses.successfullResponse(null, {pageCount, totalCount, count: users.length, users});
+            const eligibleUsers = this._filterUsers(level, isAdmin, isAccountVerified, users);
+            if(lastUsername) {
+                indexOfLastReturnedUser = eligibleUsers.findIndex(user => user.username === lastUsername);
+            }
+            if(query) {
+                matchingToSearchUsers = eligibleUsers.filter(user => {
+                        if(user.username.toLowerCase().includes(query.toLowerCase())) {
+                            return user;
+                        }
+                        if(user.email) {
+                            const index = user.email.split('').indexOf('@');
+                            const email = user.email.substring(0, index);
+                            if(email.toLowerCase().includes(query.toLowerCase())) {
+                                return user;
+                            }
+                        }
+                        if(user.phone) {
+                            if(user.phone.toLowerCase().includes(query.toLowerCase())) {
+                                return user;
+                            }
+                        }
+                    });
+            } else {
+                matchingToSearchUsers = eligibleUsers;
+            }
+            const totalCount = matchingToSearchUsers.length;
+            const pageCount = Math.ceil(totalCount / 10);
+            const usersToReturn = matchingToSearchUsers.slice(indexOfLastReturnedUser !== null ? indexOfLastReturnedUser + 1 : 0, 10);
+            return apiSuccessfulResponses.successfullResponse(null, {pageCount, totalCount, count: usersToReturn.length, users: usersToReturn});
+        } else {
+            return apiExceptionResponses.internalServerError();
         }
+    }
+
+    _filterUsers(level, isAdmin, isAccountVerified, users) {
+        const unsuitableUsers = users.filter((user) => {
+            if(level) {
+                if(user.level.level !== level) {
+                    return user;
+                }
+            }
+            if(isAdmin) {
+                const isAdminBool = isAdmin === 'true' ? true : false;
+                if(user.isAdmin !== isAdminBool) {
+                    return user;
+                }
+            }
+            if(isAccountVerified) {
+                const isAccountVerifiedBool = isAccountVerified === 'true' ? true : false;
+                if(user.isAccountVerified !== isAccountVerifiedBool) {
+                    return user;
+                }
+            }
+        });
+        const eligibleUsers = users.filter(user => {
+            if(!unsuitableUsers.includes(user)) {
+                return user;
+            }
+        });
+        return eligibleUsers;
     }
 }
 

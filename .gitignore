@@ -2,3 +2,7 @@
 /server/.env
 /server/node_modules/
 /server/static/
+/client/web/
+/client/windows/
+/client/macos/
+/client/linux/

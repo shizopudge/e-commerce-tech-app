@@ -1,10 +1,10 @@
 const Router = require('express');
 const router = new Router;
 const authController = require('./authController.js');
-const authMiddleware = require('../../middleware/authMiddleware.js');
+const usersController = require('../users/usersController.js');
 
-router.post('/signUp', authController.signUp);
+router.post('/signUp', authController.signUp, usersController.create);
 
-router.get('/token', authMiddleware, authController.generateToken);
+router.post('/signUpAsAdmin', authController.signUpAsAdmin, usersController.create);
 
 module.exports = router;

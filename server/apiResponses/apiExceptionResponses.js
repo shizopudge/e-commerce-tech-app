@@ -6,10 +6,10 @@ class ApiExceptionResponses {
         }
     }
 
-    notFound() {
+    notFound(message) {
         return {
             status: 404,
-            message: 'Not found',
+            message: message ? message : 'Not found',
         }
     }
 

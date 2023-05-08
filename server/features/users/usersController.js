@@ -1,6 +1,5 @@
 const usersRepository = require('./usersRepository.js');
 const apiExceptionResponses = require('../../apiResponses/apiExceptionResponses.js');
-const { response } = require('express');
 
 class UsersController {
     async create(req, res) {
@@ -8,7 +7,9 @@ class UsersController {
             const username = req.body.username;
             const email = req.body.email;
             const files = req.files;
-            await usersRepository.create(username, email, files).
+            const id = req.body.uid;
+            const isAdmin = req.body.isAdmin;
+            await usersRepository.create(username, email, files, id, isAdmin).
             then(response => {
                 if(response) {
                     if(response.status === 200) {
@@ -62,7 +63,7 @@ class UsersController {
             await usersRepository.getOne(id).then(response => {
                 if(response) {
                     if(response.status === 200) {
-                        console.log('Successfully get all users');
+                        console.log('Successfully get user');
                         res.status(200).send(response);
                     } else {
                         console.log(response.message);
@@ -160,8 +161,8 @@ class UsersController {
     async update(req, res) {
         try {
             const id = req.params.id;
-            const updatedUser = req.body;
-            await usersRepository.update(updatedUser, id).then(response => {
+            const updatedFields = req.body;
+            await usersRepository.update(updatedFields, id).then(response => {
                 if(response) {
                     if(response.status === 200) {
                         console.log('User successfully updated');
@@ -183,11 +184,15 @@ class UsersController {
         }
     }
 
-    async searchUser(req, res) {
+    async searchAndFilterAndSortUser(req, res) {
         try {
             const query = req.query.query;
             const lastUsername = req.query.lastUsername;
-            await usersRepository.searchUser(query, lastUsername).then(response => {
+            const level = req.query.level;
+            const isAdmin = req.query.isAdmin;
+            const isAccountVerified = req.query.isAccountVerified;
+            const orderBy = req.query.orderBy;
+            await usersRepository.searchAndFilterAndSortUser(query, lastUsername, level, isAdmin, isAccountVerified, orderBy).then(response => {
                 if(response) {
                     if(response.status === 200) {
                         console.log('Users successfully searched');

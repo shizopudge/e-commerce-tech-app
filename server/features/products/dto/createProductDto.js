@@ -3,7 +3,7 @@ const createProductDto = (id, title, description, images, characteristics, quant
     id: id, 
     title: title,
     description: description, 
-    images: images, 
+    images: images ? images : null, 
     characteristics: characteristics, 
     rating: null, 
     quantity: quantity, 

@@ -1,15 +1,48 @@
-const admin = require('../firebase_config.js');
+const {admin} = require('../firebase_config.js');
+const apiExceptionResponses = require('../apiResponses/apiExceptionResponses.js');
 
-module.exports = function (req, res, next) {
-  const token = req.headers.authorization.split(' ')[1];
-    if (token) {
-      admin.auth().verifyIdToken(token, true)
-        .then(() => {
-          next()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
-        }).catch(() => {
-          res.status(403).send('Unauthorized')
-        });
-    } else {
-      res.status(403).send('Unauthorized')
+class AuthMiddleware {
+
+  checkAuth(req, res, next) {
+    if(req.headers.authorization) {
+      const token = req.headers.authorization;
+      if(token) {
+        admin.auth().verifyIdToken(token, true)
+          .then(() => {
+            next()                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+          }).catch(() => {
+            const exception = apiExceptionResponses.unauthorized();
+            res.status(exception.status).send(exception);
+          });
+        } else {
+        const exception = apiExceptionResponses.unauthorized();
+        res.status(exception.status).send(exception);
+        }
+      } else {
+        const exception = apiExceptionResponses.unauthorized();
+        res.status(exception.status).send(exception);
+      }
     }
-  }
+  
+   async checkRole(req, res, next) {
+    if(req.headers.authorization) { 
+      const token = req.headers.authorization;
+      await admin.auth().verifyIdToken(token).then(claims => {
+          if(claims.admin === true) {
+            next();
+          } else {
+            const exception = apiExceptionResponses.noPemission();
+            res.status(exception.status).send(exception);
+          }
+          }).catch(() => {
+          const exception = apiExceptionResponses.noPemission();
+          res.status(exception.status).send(exception);
+          });
+      } else {
+        const exception = apiExceptionResponses.unauthorized();
+        res.status(exception.status).send(exception);
+      }
+   }
+}
+
+module.exports = new AuthMiddleware();

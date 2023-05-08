@@ -129,13 +129,13 @@ class ProductsRepository {
         }
     }
 
-    async update(updatedProduct, id) {
+    async update(updatedFields, id) {
          if(id){
-            if(updatedProduct) {
+            if(updatedFields) {
                 const ref = db.collection('products').doc(id);
                 const product = (await ref.get()).data();
                 if(product) {
-                    const response = await ref.update(updatedProduct);
+                    const response = await ref.update(updatedFields);
                     return apiSuccessfulResponses.successfullResponse(response);
                 } else {
                     return apiExceptionResponses.notFound();
@@ -194,25 +194,23 @@ class ProductsRepository {
                 if(files) {
                     const image = files.image;
                     const imageId = shortUuid.generate();
-                    const ref = db.collection('products').doc(id);
-                    const product = (await ref.get()).data();
-                        if(product && image) {
-                            if(product.images.length < 8) {
-                                const fileName = id + imageId + '.jpg';
-                                const response = await ref.update({images: fieldValue.arrayUnion(fileName)});
+                        if(image) {
+                            const fileName = id + imageId + '.jpg';
+                            if(product.images) {
+                                if(product.images.length < 8) {
+                                    const response = await ref.update({images: fieldValue.arrayUnion(fileName)});
+                                    filesService.uploadProductImage(image, fileName);
+                                    return apiSuccessfulResponses.successfullResponse(response);
+                                } else {
+                                    return apiExceptionResponses.badRequest('Could not upload more than 8 images');
+                                }
+                            } else {
+                                const response = await ref.update({images: [fileName]});
                                 filesService.uploadProductImage(image, fileName);
                                 return apiSuccessfulResponses.successfullResponse(response);
-                            } else {
-                                return apiExceptionResponses.badRequest('Could not upload more than 8 images');
                             }
                         } else {
-                            if(!image) {
-                                return apiExceptionResponses.badRequest('We could not get your image');
-                            }
-                            if(!product) {
-                                return apiExceptionResponses.notFound();
-                            }
-                            return apiExceptionResponses.internalServerError();
+                            return apiExceptionResponses.badRequest('We could not get your image');
                         }
                     } else {
                         return apiExceptionResponses.badRequest('We could not get your picture');
@@ -231,9 +229,7 @@ class ProductsRepository {
             const product = (await ref.get()).data();
             if(product) {
                 if(files) {
-                    const ref = db.collection('products').doc(id);
-                    const product = (await ref.get()).data();
-                        if(product && files.images) {
+                        if(files.images) {
                             if(files.images.length > 1) {
                                 if(product.images) {
                                     if((product.images.length + files.images.length) <= 8) {
@@ -255,7 +251,6 @@ class ProductsRepository {
                                         return apiExceptionResponses.badRequest('Could not upload more than 8 images');
                                     }
                                 } else {
-                                    if(files.images.length <= 8) {
                                         const images = [];
                                         const imagesNames = [];
                                         for(let i = 0; i < files.images.length; i++) {
@@ -267,12 +262,9 @@ class ProductsRepository {
                                             });
                                             imagesNames.push(fileName);
                                         }
-                                        const response = await ref.update({images: fieldValue.arrayUnion(...imagesNames)});
+                                        const response = await ref.update({images: imagesNames});
                                         filesService.uploadProductImages(images);
                                         return apiSuccessfulResponses.successfullResponse(response);
-                                    } else {
-                                        return apiExceptionResponses.badRequest('Could not upload more than 8 images');
-                                    }
                                 }
                             } else {
                                 return apiExceptionResponses.badRequest('If you are uploading 1 image then you need to use a different route');
@@ -297,7 +289,52 @@ class ProductsRepository {
         }
     }
 
-    async searchProduct(query, lastTitle, isLatest, isBestseller, minRating, discount, inStock, minReliability, minPrice, maxPrice, productType, orderBy) {
+    async addToCart(productId, uid) {
+        if(uid) {
+            if(productId) {
+                    const ref = db.collection('users').doc(uid);
+                    const user = (await ref.get()).data();
+                    if(user) {
+                        if(!user.cart.includes(productId)) {
+                            const response = await ref.update({cart: fieldValue.arrayUnion(productId)});
+                            return apiSuccessfulResponses.successfullResponse(response);
+                        } else {
+                            return apiExceptionResponses.badRequest('Product is already in users cart');
+                        }
+                    } else {
+                        return apiExceptionResponses.notFound('User not found');
+                    }
+            } else {
+                return apiExceptionResponses.badRequest('We could not get product id');
+            }
+        } else {
+            return apiExceptionResponses.badRequest('We could not get user id');
+        }
+    }
+
+    async addToWishlist(productId, uid) {
+        if(uid) {
+            if(productId) {
+                    const ref = db.collection('users').doc(uid);
+                    if(user) {
+                        if(!user.wishlist.includes(productId)) {
+                            const response = await ref.update({wishlist: fieldValue.arrayUnion(productId)});
+                            return apiSuccessfulResponses.successfullResponse(response);
+                        } else {
+                            return apiExceptionResponses.badRequest('Product is already in users wishlist');
+                        }
+                    } else {
+                        return apiExceptionResponses.notFound('User not found');
+                    }
+            } else {
+                return apiExceptionResponses.badRequest('We could not get product id');
+            }
+        } else {
+            return apiExceptionResponses.badRequest('We could not get user id');
+        }
+    }
+
+    async searchAndFilterAndSortProduct(query, lastTitle, isLatest, isBestseller, minRating, discount, inStock, minReliability, minPrice, maxPrice, productType, orderBy, productIds) {
         const products = [];
         let indexOfLastReturnedProduct = null;
         let ref = null;
@@ -312,13 +349,22 @@ class ProductsRepository {
             response.docs.forEach((doc) => {
                 products.push(doc.data());
             });
-            const eligibleProducts = this._sortProducts(isLatest, isBestseller, minRating, discount, inStock, minReliability, minPrice, maxPrice, productType, products);
+            const eligibleProducts = this._filterProducts(isLatest, isBestseller, minRating, discount, inStock, minReliability, minPrice, maxPrice, productType, products, productIds);
             if(lastTitle) {
                 indexOfLastReturnedProduct = eligibleProducts.findIndex(product => product.title === lastTitle);
             }
             if(query) {
                 matchingToSearchedProducts = eligibleProducts.filter(product => {
                         if(product.title.toLowerCase().includes(query.toLowerCase())) {
+                            return product;
+                        }
+                        if(product.description.toLowerCase().includes(query.toLowerCase())) {
+                            return product;
+                        }
+                        if(product.productCode.toLowerCase().includes(query.toLowerCase())) {
+                            return product;
+                        }
+                        if(product.modelCode.toLowerCase().includes(query.toLowerCase())) {
                             return product;
                         }
                     });
@@ -328,21 +374,27 @@ class ProductsRepository {
             const totalCount = matchingToSearchedProducts.length;
             const pageCount = Math.ceil(totalCount / 10);
             const productsToReturn = matchingToSearchedProducts.slice(indexOfLastReturnedProduct !== null ? indexOfLastReturnedProduct + 1 : 0, 10);
-            return apiSuccessfulResponses.successfullResponse(null, {pageCount, totalCount, count: productsToReturn.length, productsToReturn});
+            return apiSuccessfulResponses.successfullResponse(null, {pageCount, totalCount, count: productsToReturn.length, products: productsToReturn});
         } else {
             return apiExceptionResponses.internalServerError();
         }
     }
 
-    _sortProducts(isLatest, isBestseller, minRating, discount, inStock, minReliability, minPrice, maxPrice, productType, products) {
+    _filterProducts(isLatest, isBestseller, minRating, discount, inStock, minReliability, minPrice, maxPrice, productType, products, productIds) {
+        let discountInt = null;
+        if(discount) {
+            discountInt = parseInt(discount);
+        }
         const unsuitableProducts = products.filter((product) => {
             if(isLatest) {
-                if(product.isLatest !== true) {
+                const isLatestBool = isLatest === 'true' ? true : false;
+                if(product.isLatest !== isLatestBool) {
                     return product;
                 }
             }
             if(isBestseller) {
-                if(product.isBestseller !== true) {
+                const isBestsellerBool = isBestseller === 'true' ? true : false;
+                if(product.isBestseller !== isBestsellerBool) {
                     return product;
                 }
             }
@@ -351,9 +403,14 @@ class ProductsRepository {
                     return product;
                 }
             }
-            if(discount) {
-                if(product.discount == null) {
-                    return product;
+            if(discountInt) {
+                if(discountInt !== 0) {
+                    if(product.discount === null) {
+                        return product;
+                    }
+                    if(product.discount < discountInt) {
+                        return product;
+                    }
                 }
             }
             if(inStock) {
@@ -381,21 +438,17 @@ class ProductsRepository {
                     return product;
                 }
             }
+            if(productIds) {
+                if(!productIds.includes(product.id)) {
+                    return product;
+                }
+            }
         });
         const eligibleProducts = products.filter(product => {
             if(!unsuitableProducts.includes(product)) {
                 return product;
             }
         });
-        //? for(let i = 0; i < products.length; i++) {
-        //     const product = products[i];
-        //     for(let j = 0; j < unsuitableProducts.length; j++) {
-        //         const unsuitableProduct = unsuitableProducts[i];
-        //         if(product === unsuitableProduct) {
-        //             eligibleProducts.splice(i, 1);
-        //         }
-        //     }
-        // }
         return eligibleProducts;
     }
 }

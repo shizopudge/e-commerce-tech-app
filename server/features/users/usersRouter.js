@@ -1,21 +1,22 @@
 const Router = require('express');
 const router = new Router;
 const usersController = require('./usersController.js');
+const authMiddleware = require('../../middleware/authMiddleware.js');
 
-router.post('/', usersController.create);
+router.post('/', authMiddleware.checkAuth, authMiddleware.checkRole, usersController.create);
 
-router.delete('/:id', usersController.delete);
+router.delete('/:id', authMiddleware.checkAuth, usersController.delete);
 
-router.delete('/image/:id', usersController.deleteImage);
+router.delete('/image/:id', authMiddleware.checkAuth,  usersController.deleteImage);
 
-router.get('/:id', usersController.getOne);
+router.get('/:id', authMiddleware.checkAuth, usersController.getOne);
 
-router.get('/', usersController.getAll);
+router.get('/', authMiddleware.checkAuth, authMiddleware.checkRole, usersController.getAll);
 
-router.get('/v1/search', usersController.searchUser);
+router.get('/v1/search', authMiddleware.checkAuth, usersController.searchAndFilterAndSortUser);
 
-router.put('/image/:id', usersController.uploadImage);
+router.put('/image/:id', authMiddleware.checkAuth, usersController.uploadImage);
 
-router.put('/:id', usersController.update);
+router.put('/:id', authMiddleware.checkAuth, usersController.update);
 
 module.exports = router;
