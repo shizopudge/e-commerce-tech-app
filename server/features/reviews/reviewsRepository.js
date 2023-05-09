@@ -5,6 +5,7 @@ const shortUuid = require('short-uuid');
 const filesService = require('../../service/filesService.js');
 const apiExceptionResponses = require('../../apiResponses/apiExceptionResponses.js');
 const apiSuccessfulResponses = require('../../apiResponses/apiSuccessfulResponses.js');
+const productsRepository = require('../products/productsRepository.js');
 
 class ReviewsRepository {
     async create(authorId, productId, body, rating, files) {
@@ -33,6 +34,7 @@ class ReviewsRepository {
                     const review = createReviewDto(id, authorId, productId, title, body, rating, imagesNames, createdAt);
                     const response = await db.collection('reviews').doc(id).create(review);
                     filesService.uploadReviewImages(images);
+                    await this.updateProductAfterCreatingReview(productId);
                     return apiSuccessfulResponses.successfullResponse(response);
                 } else {
                     const image = files.images;
@@ -41,11 +43,13 @@ class ReviewsRepository {
                     const review = createReviewDto(id, authorId, productId, title, body, rating, [fileName], createdAt);
                     const response = await db.collection('reviews').doc(id).create(review);
                     filesService.uploadReviewImage(image, fileName);
+                    await this.updateProductAfterCreatingReview(productId);
                     return apiSuccessfulResponses.successfullResponse(response);
                 }
             } else {
                 const review = createReviewDto(id, authorId, productId, title, body, rating, null, createdAt);
                 const response = await db.collection('reviews').doc(id).create(review);
+                await this.updateProductAfterCreatingReview(productId);
                 return apiSuccessfulResponses.successfullResponse(response);
             }  
         } else {
@@ -334,6 +338,35 @@ class ReviewsRepository {
             return apiExceptionResponses.badRequest('We could not get user id');
         }
     }
+
+    async updateProductAfterCreatingReview(productId) {
+        if(productId) {
+            let rating = 0;
+            let goodReviewsCount = 0;
+            const reviews = [];
+            const ref = db.collection('reviews').where('productId', '==', productId);
+            const response = await ref.get();
+                if(response) {
+                    response.docs.forEach((doc) => {
+                        reviews.push(doc.data());
+                    });
+                    reviews.forEach(review => {
+                        const reviewRating = parseFloat(review.rating);
+                        rating += reviewRating;
+                        if(reviewRating >= 3) {
+                            goodReviewsCount++;
+                        }
+                    });
+                    const reliability = (goodReviewsCount / reviews.length) * 100;
+                    productsRepository.update({rating, reliability, reviewsCount: fieldValue.increment(1)}, productId);
+                } else {
+                    return apiExceptionResponses.notFound();
+                }
+            } else {
+                return apiExceptionResponses.badRequest('We could not get product id');
+            }
+    }
+    
 
     async sortAllProductReviews(productId, lastReviewId, orderBy) {
         if(productId) {

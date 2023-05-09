@@ -4,6 +4,7 @@ const apiExceptionResponses = require('../../apiResponses/apiExceptionResponses.
 class ProductsController {
     async create(req, res) {
         try {
+            const brand = req.body.brand;
             const title = req.body.title;
             const description = req.body.description;
             const characteristics = req.body.characteristics;
@@ -13,7 +14,7 @@ class ProductsController {
             const modelCode = req.body.modelCode;
             const productType = req.body.productType;
             const files = req.files;
-            await productsRepository.create(title, files, description, characteristics, quantity, price, productCode, modelCode, productType).
+            await productsRepository.create(brand, title, files, description, characteristics, quantity, price, productCode, modelCode, productType).
             then(response => {
                 if(response) {
                     if(response.status === 200) {

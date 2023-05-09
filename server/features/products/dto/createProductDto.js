@@ -1,10 +1,10 @@
-const createProductDto = (id, title, description, images, characteristics, quantity, price, productCode, modelCode, productType) => {
+const createProductDto = (id, brand, title, description, images, quantity, price, productCode, modelCode, productType) => {
     return {
     id: id, 
+    brand: brand,
     title: title,
     description: description, 
     images: images ? images : null, 
-    characteristics: characteristics, 
     rating: null, 
     quantity: quantity, 
     price: price, 
@@ -15,6 +15,7 @@ const createProductDto = (id, title, description, images, characteristics, quant
     productType: productType,
     isBestseller: false,
     isLatest: true,
+    reviewsCount: 0,
     }
 }
 

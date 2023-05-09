@@ -7,9 +7,9 @@ const filesService = require('../../service/filesService.js');
 const createProductDto = require('../products/dto/createProductDto.js');
 
 class ProductsRepository {
-    async create(title, files, description, characteristics, quantity, price, productCode, modelCode, productType) {
+    async create(brand, title, files, description, characteristics, quantity, price, productCode, modelCode, productType) {
         const id = uuid.v4();
-        if(title && description && characteristics && quantity && price && productCode && modelCode && productType) {
+        if(brand && title && description && characteristics && quantity && price && productCode && modelCode && productType) {
             quantity = parseInt(quantity);
             price = parseFloat(price);
             if(files) {
@@ -25,7 +25,7 @@ class ProductsRepository {
                         });
                         imagesNames.push(fileName);
                     }
-                    const product = createProductDto(id, title, description, imagesNames, characteristics, quantity, price, productCode, modelCode, productType);
+                    const product = createProductDto(id, brand, title, description, imagesNames, characteristics, quantity, price, productCode, modelCode, productType);
                     const response = await db.collection('products').doc(id).create(product);
                     filesService.uploadProductImages(images);
                     return apiSuccessfulResponses.successfullResponse(response);
@@ -33,13 +33,13 @@ class ProductsRepository {
                     const image = files.images;
                     const imageId = shortUuid.generate();
                     const fileName = id + ` ${imageId}`  + '.jpg';  
-                    const product = createProductDto(id, title, description, [fileName], characteristics, quantity, price, productCode, modelCode, productType);
+                    const product = createProductDto(id, brand, title, description, [fileName], characteristics, quantity, price, productCode, modelCode, productType);
                     const response = await db.collection('products').doc(id).create(product);
                     filesService.uploadProductImage(image, fileName);
                     return apiSuccessfulResponses.successfullResponse(response);
                 }
             } else {
-                const product = createProductDto(id, title, description, null, characteristics, quantity, price, productCode, modelCode, productType);
+                const product = createProductDto(id, brand, title, description, null, characteristics, quantity, price, productCode, modelCode, productType);
                 const response = await db.collection('products').doc(id).create(product);
                 return apiSuccessfulResponses.successfullResponse(response);
             }  
@@ -60,13 +60,16 @@ class ProductsRepository {
                 return apiExceptionResponses.badRequest('We could not get product price');
             }
             if (!productCode) {
-                return apiExceptionResponses.badRequest('We could not get product product code');
+                return apiExceptionResponses.badRequest('We could not get product code');
             }
             if (!modelCode) {
                 return apiExceptionResponses.badRequest('We could not get product model code');
             }
             if (!productType) {
-                return apiExceptionResponses.badRequest('We could not get product product type');
+                return apiExceptionResponses.badRequest('We could not get product type');
+            }
+            if (!brand) {
+                return apiExceptionResponses.badRequest('We could not get product brand');
             }
         }
     }

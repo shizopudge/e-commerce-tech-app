@@ -3,7 +3,7 @@ const router = new Router;
 const reviewsController = require('./reviewsController.js');
 const authMiddleware = require('../../middleware/authMiddleware.js');
 
-router.post('/', authMiddleware.checkAuth, reviewsController.create);
+router.post('/',  reviewsController.create);
 
 router.delete('/image/:id/:imageLink', authMiddleware.checkAuth, reviewsController.deleteOneImage);
 
