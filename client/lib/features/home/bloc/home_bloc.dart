@@ -21,32 +21,16 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       HomeInitialEvent event, Emitter<HomeState> emit) async {
     emit(HomeLoadingState());
     final latestProductsRes = await _homeRepositoryImpl.getSomeLatestProducts();
-    await latestProductsRes.fold(
+    latestProductsRes.fold(
       (error) {
         emit(HomeExceptionState(error: error));
         emit(HomeExceptionActionState(error: error));
       },
-      (latestProducts) async {
-        final usersCartAndWishlistRes =
-            await _homeRepositoryImpl.getUsersCartAndWishlist();
-        usersCartAndWishlistRes.fold(
-          (error) {
-            emit(HomeExceptionState(error: error));
-            emit(HomeExceptionActionState(error: error));
-          },
-          (cartAndWishlist) {
-            final List<String> cart = cartAndWishlist['cart'] ?? [];
-            final List<String> wishlist = cartAndWishlist['wishlist'] ?? [];
-            emit(
-              HomeLoadedState(
-                latestProducts: latestProducts,
-                cart: cart,
-                wishlist: wishlist,
-              ),
-            );
-          },
-        );
-      },
+      (latestProducts) => emit(
+        HomeLoadedState(
+          latestProducts: latestProducts,
+        ),
+      ),
     );
   }
 }

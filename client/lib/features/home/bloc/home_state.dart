@@ -12,13 +12,9 @@ class HomeLoadingState extends HomeState {}
 
 class HomeLoadedState extends HomeState {
   final List<Product> latestProducts;
-  final List<String> cart;
-  final List<String> wishlist;
 
   HomeLoadedState({
     required this.latestProducts,
-    required this.cart,
-    required this.wishlist,
   });
 }
 

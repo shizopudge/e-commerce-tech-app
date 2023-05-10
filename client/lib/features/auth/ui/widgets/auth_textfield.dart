@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../constants/constants.dart';
 
@@ -27,6 +28,9 @@ class AuthTextField extends StatelessWidget {
             child: TextFormField(
               controller: _controller,
               validator: validator,
+              inputFormatters: [
+                FilteringTextInputFormatter.deny(RegExp(r'[ ]'))
+              ],
               cursorColor: Pallete.actionCommonColor,
               obscureText: isPasswordShown ? false : true,
               style: FontStyles.label,

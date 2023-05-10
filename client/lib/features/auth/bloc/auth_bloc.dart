@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:meta/meta.dart';
 
 import '../../../storage/shared_prefs.dart';
@@ -82,10 +83,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   FutureOr<void> _authInititalEvent(
       AuthInititalEvent event, Emitter<AuthState> emit) async {
+    emit(AuthLoadingState());
     final prefs = await SharedPrefsStorage().prefs;
     final bool isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
-    if (!isFirstLaunch) {
-      emit(AuthSignInState());
+    if (event.user != null) {
+      final res = await _authRepositoryImpl.getUser(event.user!.uid);
+      res.fold(
+        (error) {
+          emit(AuthSignInState());
+          emit(AuthExceptionState(error: error));
+        },
+        (userModel) =>
+            emit(AuthSuccessfullyAuthorizedState(userModel: userModel)),
+      );
+    } else {
+      if (!isFirstLaunch) {
+        emit(AuthSignInState());
+      }
     }
   }
 }

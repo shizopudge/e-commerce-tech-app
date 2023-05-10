@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../constants/firebase.dart';
 import '../../../../constants/pages.dart';
+import '../../bloc/auth_bloc.dart';
 
 class AuthSplashPage extends StatefulWidget {
   const AuthSplashPage({super.key});
@@ -32,6 +34,7 @@ class _AuthSplashPageState extends State<AuthSplashPage> {
   @override
   void initState() {
     FirebaseConstants.auth.authStateChanges().listen((user) {
+      context.read<AuthBloc>().add(AuthInititalEvent(user: user));
       if (user != null) {
         _navigateToHomePage();
       } else {

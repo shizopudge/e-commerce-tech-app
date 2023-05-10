@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../constants/constants.dart';
 import '../../../../service/utils.dart';
 import '../../../../storage/shared_prefs.dart';
 import '../../bloc/auth_bloc.dart';
@@ -18,7 +17,6 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
-  final _authBloc = Blocs().authBloc;
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -26,12 +24,6 @@ class _AuthPageState extends State<AuthPage> {
   final _isLoadingValueNotifier = ValueNotifier<bool>(false);
 
   final _formKey = GlobalKey<FormState>();
-
-  @override
-  void initState() {
-    _authBloc.add(AuthInititalEvent());
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -43,24 +35,27 @@ class _AuthPageState extends State<AuthPage> {
     super.dispose();
   }
 
-  void _onWelcomeRegisterTap() async {
+  void _changeIsFirstLaunch() async {
     final prefs = await SharedPrefsStorage().prefs;
     prefs.setBool('isFirstLaunch', false);
-    _authBloc.add(AuthRegisterButtonTapEvent());
+  }
+
+  void _onWelcomeRegisterTap() {
+    _changeIsFirstLaunch();
+    context.read<AuthBloc>().add(AuthRegisterButtonTapEvent());
   }
 
   void _onWelcomeSignInTap() async {
-    final prefs = await SharedPrefsStorage().prefs;
-    prefs.setBool('isFirstLaunch', false);
-    _authBloc.add(AuthSignInButtonClickEvent());
+    _changeIsFirstLaunch();
+    context.read<AuthBloc>().add(AuthSignInButtonClickEvent());
   }
 
   void _onAuthSignInFormRegisterTap() {
     _formKey.currentState?.reset();
-    _authBloc.add(AuthRegisterButtonTapEvent());
+    context.read<AuthBloc>().add(AuthRegisterButtonTapEvent());
   }
 
-  void _onAuthSignInFormSignInTap() => _authBloc.add(
+  void _onAuthSignInFormSignInTap() => context.read<AuthBloc>().add(
         AuthSignInEvent(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
@@ -69,10 +64,10 @@ class _AuthPageState extends State<AuthPage> {
 
   void _onAuthRegisterFormSignInTap() {
     _formKey.currentState?.reset();
-    _authBloc.add((AuthSignInButtonClickEvent()));
+    context.read<AuthBloc>().add((AuthSignInButtonClickEvent()));
   }
 
-  void _onAuthRegisterFormRegisterTap() => _authBloc.add(
+  void _onAuthRegisterFormRegisterTap() => context.read<AuthBloc>().add(
         AuthSignUpEvent(
           email: _emailController.text.trim(),
           username: _usernameController.text.trim(),
@@ -85,7 +80,6 @@ class _AuthPageState extends State<AuthPage> {
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
     return BlocConsumer<AuthBloc, AuthState>(
-      bloc: _authBloc,
       listenWhen: (previous, current) => current is AuthActionState,
       buildWhen: (previous, current) => current is! AuthActionState,
       listener: (context, state) {

@@ -173,7 +173,7 @@ class ProductCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (isProductInUsersWishlist)
+                      if (isProductInUsersCart)
                         IconButton(
                           onPressed: () {},
                           icon: const Icon(
@@ -190,7 +190,7 @@ class ProductCard extends StatelessWidget {
                       const SizedBox(
                         width: 15,
                       ),
-                      if (isProductInUsersCart)
+                      if (isProductInUsersWishlist)
                         IconButton(
                           onPressed: () {},
                           icon: const Icon(

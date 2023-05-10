@@ -1,6 +1,6 @@
+import 'package:client/features/auth/data/auth_repository_impl.dart';
 import 'package:dio/dio.dart';
 import '../constants/global.dart';
-import '../constants/repositories.dart';
 import 'interceptors.dart';
 
 class DioClient {
@@ -23,7 +23,7 @@ class DioClient {
     dio.interceptors.addAll({
       AppInterceptors(
         dio,
-        authRepositoryImpl: AppRepositories.authRepositoryImpl,
+        authRepositoryImpl: AuthRepositoryImpl(),
       ),
     });
     return dio;
