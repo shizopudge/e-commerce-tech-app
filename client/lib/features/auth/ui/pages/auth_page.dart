@@ -1,3 +1,4 @@
+import 'package:client/common/overlapping_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../service/utils.dart';
@@ -33,6 +34,12 @@ class _AuthPageState extends State<AuthPage> {
     _isPasswordShownNotifier.dispose();
     _isLoadingValueNotifier.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    context.read<AuthBloc>().add(AuthInititalEvent());
+    super.initState();
   }
 
   void _changeIsFirstLaunch() async {
@@ -87,8 +94,7 @@ class _AuthPageState extends State<AuthPage> {
           Utils.showSnackbBar(context, state.error);
         }
         if (state is AuthSuccessfullyAuthorizedState) {
-          Utils.showSnackbBar(context,
-              'You successfully authorized as ${state.userModel.username}');
+          Utils.showSnackbBar(context, 'You successfully authorized');
         }
         if (state is AuthLoadingState) {
           _isLoadingValueNotifier.value = true;
@@ -99,7 +105,7 @@ class _AuthPageState extends State<AuthPage> {
       builder: (context, state) {
         _isLoadingValueNotifier.value = false;
         switch (state.runtimeType) {
-          case AuthInitialState:
+          case AuthWelcomeState:
             return Welcome(
               screenHeight: screenHeight,
               onRegisterTap: _onWelcomeRegisterTap,
@@ -130,7 +136,9 @@ class _AuthPageState extends State<AuthPage> {
               register: _onAuthRegisterFormRegisterTap,
             );
           default:
-            return const SizedBox();
+            return const Scaffold(
+              body: OverlappingLoader(),
+            );
         }
       },
     );

@@ -6,7 +6,7 @@ abstract class AuthState {}
 @immutable
 abstract class AuthActionState extends AuthState {}
 
-class AuthInitialState extends AuthState {}
+class AuthWelcomeState extends AuthState {}
 
 class AuthSignInState extends AuthState {}
 
@@ -20,8 +20,4 @@ class AuthExceptionState extends AuthActionState {
   AuthExceptionState({required this.error});
 }
 
-class AuthSuccessfullyAuthorizedState extends AuthActionState {
-  final UserModel userModel;
-
-  AuthSuccessfullyAuthorizedState({required this.userModel});
-}
+class AuthSuccessfullyAuthorizedState extends AuthActionState {}

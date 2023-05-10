@@ -6,7 +6,7 @@ import '../../../../service/typedef.dart';
 import '../models/user_model.dart';
 
 abstract class AuthRepository {
-  FutureEither<UserModel> signIn(String email, String password);
+  FutureEither<void> signIn(String email, String password);
 
   FutureEither<Response> signUp(
       String email, String password, String username, File? image);

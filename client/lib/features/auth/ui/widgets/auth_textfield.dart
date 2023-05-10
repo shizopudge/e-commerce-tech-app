@@ -102,6 +102,7 @@ class AuthTextField extends StatelessWidget {
       child: TextFormField(
         controller: _controller,
         validator: validator,
+        inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'[ ]'))],
         cursorColor: Pallete.actionCommonColor,
         style: FontStyles.label,
         decoration: InputDecoration(

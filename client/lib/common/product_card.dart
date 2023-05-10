@@ -8,13 +8,10 @@ import 'animated_gradient.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
-  final bool isProductInUsersWishlist;
-  final bool isProductInUsersCart;
+
   const ProductCard({
     super.key,
     required this.product,
-    required this.isProductInUsersWishlist,
-    required this.isProductInUsersCart,
   });
 
   @override
@@ -173,7 +170,7 @@ class ProductCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (isProductInUsersCart)
+                      if (2 > 1)
                         IconButton(
                           onPressed: () {},
                           icon: const Icon(
@@ -190,7 +187,7 @@ class ProductCard extends StatelessWidget {
                       const SizedBox(
                         width: 15,
                       ),
-                      if (isProductInUsersWishlist)
+                      if (1 < 2)
                         IconButton(
                           onPressed: () {},
                           icon: const Icon(

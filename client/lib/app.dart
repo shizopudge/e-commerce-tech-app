@@ -6,8 +6,31 @@ import 'features/auth/bloc/auth_bloc.dart';
 import 'features/auth/data/auth_repository_impl.dart';
 import 'features/home/data/home_repository_impl.dart';
 
-class App extends StatelessWidget {
+class App extends StatefulWidget {
   const App({super.key});
+
+  @override
+  State<App> createState() => _AppState();
+}
+
+class _AppState extends State<App> {
+  bool isAuthorized = false;
+
+  @override
+  void initState() {
+    FirebaseConstants.auth.authStateChanges().listen((user) {
+      if (user != null) {
+        setState(() {
+          isAuthorized = true;
+        });
+      } else {
+        setState(() {
+          isAuthorized = false;
+        });
+      }
+    });
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +75,7 @@ class App extends StatelessWidget {
                           ),
                     ),
               debugShowCheckedModeBanner: false,
-              home: Pages.authSplashPage,
+              home: isAuthorized ? Pages.homePage : Pages.authPage,
             );
           },
         ),

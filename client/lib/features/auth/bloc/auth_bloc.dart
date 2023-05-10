@@ -2,12 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:bloc/bloc.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:meta/meta.dart';
 
+import '../../../constants/constants.dart';
 import '../../../storage/shared_prefs.dart';
 import '../data/auth_repository_impl.dart';
-import '../domain/models/user_model.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -16,7 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepositoryImpl _authRepositoryImpl;
   AuthBloc({required AuthRepositoryImpl authRepositoryImpl})
       : _authRepositoryImpl = authRepositoryImpl,
-        super(AuthInitialState()) {
+        super(AuthSignInState()) {
     on<AuthSignInEvent>(_authSignInEvent);
     on<AuthSignUpEvent>(_authSignUpEvent);
     on<AuthRegisterButtonTapEvent>(_authRegisterButtonTapEvent);
@@ -33,11 +32,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthSignInState());
         emit(AuthExceptionState(error: error));
       },
-      (userModel) {
-        emit(
-          AuthSuccessfullyAuthorizedState(userModel: userModel),
-        );
-      },
+      (r) {},
     );
   }
 
@@ -73,8 +68,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             emit(AuthRegisterState());
             emit(AuthExceptionState(error: error));
           },
-          (userModel) => emit(
-            AuthSuccessfullyAuthorizedState(userModel: userModel),
+          (r) => emit(
+            AuthSuccessfullyAuthorizedState(),
           ),
         );
       },
@@ -86,18 +81,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoadingState());
     final prefs = await SharedPrefsStorage().prefs;
     final bool isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
-    if (event.user != null) {
-      final res = await _authRepositoryImpl.getUser(event.user!.uid);
-      res.fold(
-        (error) {
-          emit(AuthSignInState());
-          emit(AuthExceptionState(error: error));
-        },
-        (userModel) =>
-            emit(AuthSuccessfullyAuthorizedState(userModel: userModel)),
-      );
+    final user = FirebaseConstants.auth.currentUser;
+    if (user != null) {
+      emit(AuthSuccessfullyAuthorizedState());
     } else {
-      if (!isFirstLaunch) {
+      if (isFirstLaunch) {
+        emit(AuthWelcomeState());
+      } else {
         emit(AuthSignInState());
       }
     }

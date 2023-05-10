@@ -23,7 +23,7 @@ class AuthRepositoryImpl extends AuthRepository {
       Duration(milliseconds: 60000);
 
   @override
-  FutureEither<UserModel> signIn(String email, String password) async {
+  FutureEither<void> signIn(String email, String password) async {
     try {
       final credential =
           await FirebaseConstants.auth.signInWithEmailAndPassword(
@@ -32,16 +32,12 @@ class AuthRepositoryImpl extends AuthRepository {
       );
       final user = credential.user;
       if (user != null) {
-        final uid = user.uid;
         final idToken = await user.getIdToken(true);
         await SecureStorage().storage.write(
               key: Globals.idTokenSecureStoragePath,
               value: idToken,
             );
-        final response =
-            await DioClient().dio.get('${ApiRoutes.usersRoute}/$uid');
-        final userModel = UserModel.fromJson(response.data['data']);
-        return right(userModel);
+        return right(null);
       } else {
         return left('User is null');
       }

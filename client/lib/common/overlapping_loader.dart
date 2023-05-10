@@ -8,7 +8,7 @@ class OverlappingLoader extends StatelessWidget {
   final String text;
   const OverlappingLoader({
     super.key,
-    required this.text,
+    this.text = 'Loading',
   });
 
   @override
